@@ -1,0 +1,615 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Denodo — The AI Data Layer (prototype)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Mona+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --black:#000; --ink:#1c1c1c; --d2:#2a2a2a; --white:#fff; --red:#fb3229;
+  --grey:#f2f2f2; --g2:#e9e9e9; --g3:#cfcfcf; --t2:#707070; --t3:#a6a6a6;
+  --orchid:#c04ee0; --sky:#5468ff; --saffron:#f5c84b; --berry:#d6145c; --orange:#ff6a2a;
+  --w:1360px; --r:24px;
+  --ease:cubic-bezier(.22,.8,.2,1);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:auto}
+body{margin:0;background:#fff;color:#000;font-family:"Mona Sans",system-ui,-apple-system,Segoe UI,sans-serif;font-weight:500;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+a{color:inherit;text-decoration:none}
+img{display:block}
+.page{width:1440px;max-width:100%;margin:0 auto;padding:0 40px 40px;display:flex;flex-direction:column;gap:96px}
+.section{width:100%}
+h1,h2,h3,p{margin:0}
+.center{text-align:center}
+.eyebrow{font-size:13px;font-weight:600;letter-spacing:.08em;color:var(--red);text-transform:uppercase}
+.title{font-size:52px;line-height:1.08;letter-spacing:-.02em;font-weight:500}
+.lead{font-size:20px;line-height:1.4;color:var(--t2);font-weight:400}
+.pill{display:inline-flex;align-items:center;gap:10px;height:56px;padding:0 26px;border-radius:999px;font-size:16px;font-weight:500;white-space:nowrap;transition:transform .35s var(--ease),background .35s}
+.pill:hover{transform:translateY(-2px)}
+.pill.black{background:#000;color:#fff}
+.pill.red{background:var(--red);color:#fff}
+.pill.white{background:#fff;color:#000}
+.pill.outline{border:1.5px solid #000;color:#000;background:transparent}
+.pill.outline.light{border-color:#fff;color:#fff}
+.pill .arr{font-weight:400;font-size:18px}
+.datum{width:10px;height:10px;border-radius:2px;background:var(--red);flex:none}
+.chip{display:inline-flex;align-items:center;gap:12px;height:56px;padding:0 22px 0 18px;border-radius:999px;background:var(--grey);font-size:16px;font-weight:500;white-space:nowrap}
+.chip img{width:24px;height:24px}
+.chip.active{background:#000;color:#fff}
+.chip.active img{filter:invert(1)}
+.chip.on-red{background:#fff;color:#000}
+
+/* reveal */
+[data-reveal]{opacity:0;transform:translateY(28px);transition:opacity .9s var(--ease),transform .9s var(--ease)}
+[data-reveal].in{opacity:1;transform:none}
+[data-reveal][data-delay="1"]{transition-delay:.1s}[data-reveal][data-delay="2"]{transition-delay:.2s}[data-reveal][data-delay="3"]{transition-delay:.3s}[data-reveal][data-delay="4"]{transition-delay:.4s}[data-reveal][data-delay="5"]{transition-delay:.5s}
+
+/* NAV */
+.nav{position:sticky;top:0;z-index:50;padding:20px 0 12px;pointer-events:none}   /* only the black bar floats; the strip around it is see-through */
+.nav .navbar{pointer-events:auto}
+.navbar{height:76px;background:#000;border-radius:20px;display:flex;align-items:center;justify-content:space-between;padding:0 14px 0 28px;color:#fff}
+.brand{display:flex;align-items:center;gap:10px;font-size:28px;font-weight:600;letter-spacing:-.025em}
+.brand img{width:30px}
+.links{display:flex;gap:34px;font-size:15px}
+.actions{display:flex;align-items:center;gap:28px;font-size:15px}
+.actions .pill{height:48px;padding:0 22px}
+.announce{display:flex;justify-content:center;gap:8px;align-items:center;font-size:14px;color:var(--t2);margin-top:-82px}   /* pulls it back under the bar despite the page gap */
+.announce b{font-size:13px;font-weight:600;letter-spacing:.08em;color:var(--red)}
+
+/* HERO */
+.hero{position:relative;height:800px;border-radius:var(--r);background:var(--grey);overflow:hidden;display:flex;flex-direction:column;align-items:center;padding-top:64px}
+.hero .copy{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;gap:28px;max-width:720px;text-align:center}
+.hero h1{font-size:80px;line-height:1;letter-spacing:-.035em;font-weight:500}
+.hero .lead{max-width:560px}
+.hero .ctas{display:flex;gap:12px}
+.hero .light{position:absolute;inset:0;z-index:1;pointer-events:none}
+.blob{position:absolute;border-radius:50%;filter:blur(70px);will-change:transform;animation:drift 14s ease-in-out infinite alternate}
+.hero .stats{position:absolute;z-index:2;left:40px;right:40px;bottom:0;height:160px;border-top:1px solid rgba(0,0,0,.12);display:grid;grid-template-columns:repeat(4,1fr);padding-top:36px}
+.hero .stat{padding:0 24px;position:relative}
+.hero .stat+.stat::before{content:"";position:absolute;left:0;top:4px;width:1px;height:40px;background:rgba(0,0,0,.12)}
+.hero .stat:first-child{padding-left:0}
+.hero .stat b{display:block;font-size:40px;line-height:1;letter-spacing:-.02em;font-weight:500}
+.hero .stat span{display:block;margin-top:8px;font-size:14px;color:var(--t2);font-weight:400}
+@keyframes drift{from{transform:translate(0,0) scale(1)}to{transform:translate(40px,-24px) scale(1.06)}}
+
+/* HOW IT WORKS */
+.how{position:relative}
+.how .pin{height:calc(100vh + 1500px)}   /* pinned: the extra height is the scroll range of the reveal */
+.how .stick{position:sticky;top:0;height:100vh;padding-top:120px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:72px}   /* top-anchored so the title never moves while layers open and close */
+.how .title{max-width:none;white-space:nowrap}
+.layers{width:100%;display:flex;flex-direction:column;align-items:center}
+/* scroll-staged reveal: each [data-at] switches on once the section's progress passes its value */
+[data-at]{opacity:0;transform:translateY(24px);transition:opacity .7s var(--ease),transform .7s var(--ease)}
+[data-at].in{opacity:1;transform:none}
+.band[data-at]{transform:translateY(32px) scale(.96)}
+.band[data-at].in{transform:none}
+/* accordion: the active layer is a red band with its chips; the others fold down to a label */
+.band{width:100%;display:flex;flex-direction:column;align-items:center;gap:18px;padding:28px 40px 32px;border-radius:var(--r);background:var(--red);color:#fff;position:relative;transition:background .6s var(--ease),color .6s var(--ease),padding .6s var(--ease),gap .6s var(--ease),opacity .7s var(--ease),transform .7s var(--ease)}
+.band .ltitle{font-size:38px;line-height:1;letter-spacing:-.015em;font-weight:500;transition:font-size .6s var(--ease)}
+.band .chips{display:flex;gap:12px;justify-content:center;height:56px;overflow:hidden;transition:height .6s var(--ease),opacity .4s var(--ease)}
+.band .chip,.band .chip.active{background:#fff;color:#000;transition:opacity .7s var(--ease),transform .7s var(--ease)}
+.band .chip.active img{filter:none}
+.band .live{opacity:0;transform:translateY(10px);transition:opacity .6s var(--ease),transform .6s var(--ease);transition-delay:.75s}
+.band.in .live{opacity:1;transform:none}
+.band.red .chip{opacity:0;transform:translateY(10px)}
+.band.red.in .chip{opacity:1;transform:none}
+.band.red.in .chip:nth-child(1){transition-delay:.25s}.band.red.in .chip:nth-child(2){transition-delay:.35s}.band.red.in .chip:nth-child(3){transition-delay:.45s}.band.red.in .chip:nth-child(4){transition-delay:.55s}
+.band.c{background:transparent;color:#000;padding:0;gap:0}
+.band.c .ltitle{font-size:26px}
+.band.c .chips{height:0;opacity:0}
+#sources.c .ltitle{font-size:38px}   /* the last layer keeps its size when it folds: the thread leaves from it */
+.band.in.c .live{opacity:0;transform:translateY(10px);transition-delay:0s}
+/* one centred pixel line per gap; its pixels light up top-down with scroll to lead into the next layer.
+   Between two folded layers the line shortens to a single faint pixel */
+.flow{width:100%;height:96px;position:relative;transition:height .6s var(--ease)}
+.flow.short{height:40px}
+.flow .d{position:absolute;left:50%;border-radius:2px;background:var(--red);opacity:0;margin-left:calc(var(--s) / -2);transition:opacity .35s var(--ease),top .6s var(--ease)}
+.flow .d.lit{opacity:var(--o);animation:breathe 2.4s ease-in-out infinite;animation-delay:var(--dl,0s)}
+.flow.short .d:first-child{top:17px!important}
+.flow.short .d:not(:first-child){opacity:0}
+.how.measure *{transition:none!important}
+.how.measure .band{transform:none!important}
+@keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(.7)}}
+.live{position:absolute;right:24px;top:22px;height:32px;padding:0 14px 0 12px;border-radius:999px;background:#000;color:#fff;font-size:13px;display:inline-flex;align-items:center;gap:8px}
+.live .datum{width:8px;height:8px;animation:blink 1.4s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* WHY (black band) */
+/* Why starts on white: the thread runs out of Sources and builds the star while the block scrolls up,
+   then the block pins and the black band fades in behind the star before the copy scrolls up in it */
+.why{--up:400px;position:relative;margin-top:calc(-96px - var(--up))}   /* overlaps the empty bottom of the pinned How block by --up */
+.why .wpin{height:calc(100vh + 500px)}   /* the extra height is the scroll range of the background switch */
+.why .wstick{position:sticky;top:0;height:100vh}
+.why .bg{position:absolute;inset:0;background:var(--ink);border-radius:var(--r) var(--r) 0 0;opacity:0;transition:opacity .9s var(--ease)}
+.why.dark .bg{opacity:1}
+.why .wcopy{background:var(--ink);border-radius:0 0 var(--r) var(--r);padding:40px 40px 88px;display:flex;flex-direction:column;align-items:center;gap:24px;text-align:center;color:#fff}
+.wstick .pulse{top:calc(50% - 320px)}
+.why .title{max-width:none;white-space:nowrap;transition:opacity 1s var(--ease),transform 1s var(--ease)}
+.why .lead{color:var(--t3);max-width:760px}
+.thread{position:absolute;left:50%;top:0;width:0;height:0;overflow:visible}
+.thread .d{position:absolute;left:0;border-radius:2px;background:var(--red);transform:translateX(-50%);opacity:.08;transition:opacity .25s linear,transform .25s var(--ease)}
+.thread .d.lit{opacity:var(--o)}
+.pulse{position:absolute;left:50%;top:0;width:640px;height:640px;transform:translateX(-50%);transform-origin:center;will-change:transform}
+.pulse .d{position:absolute;border-radius:2px;background:var(--red);opacity:0;transform:scale(.4);transition:opacity .5s var(--ease),transform .7s var(--ease)}
+.pulse .d.lit{opacity:var(--o);transform:scale(1)}
+
+/* CORE */
+.core{display:flex;flex-direction:column;align-items:center;gap:56px}
+.cards4{display:grid;grid-template-columns:repeat(4,1fr);gap:24px;width:100%}
+.card{background:var(--grey);border-radius:var(--r);padding:32px;display:flex;flex-direction:column;justify-content:space-between;min-height:400px}
+.card img{width:30px;height:30px}
+.card h3{font-size:26px;letter-spacing:-.01em;font-weight:500}
+.card .tag{color:var(--red);font-size:16px;margin-top:10px}
+.card p{color:var(--t2);font-size:16px;line-height:1.45;font-weight:400;margin-top:10px}
+
+/* TRUSTED */
+.trusted{display:flex;flex-direction:column;align-items:center;gap:48px;padding:16px 0}
+.trusted h3{font-size:26px;font-weight:500;letter-spacing:-.01em}
+.logos{display:flex;justify-content:center;gap:56px;align-items:center;flex-wrap:wrap}
+.logos img{height:64px;width:auto;opacity:.95}
+
+/* USE CASES */
+.uses{background:var(--ink);border-radius:var(--r);padding:72px 40px 72px;display:flex;flex-direction:column;align-items:center;gap:40px;color:#fff}
+.uses .title{font-size:48px;max-width:900px}
+.rail{display:flex;background:var(--d2);border-radius:999px;padding:6px;gap:6px}
+.rail div{height:60px;padding:0 36px;display:flex;align-items:center;gap:14px;border-radius:999px;font-size:16px}
+.rail .on{background:#fff;color:#000}
+.rail .on .datum{width:8px;height:8px}
+.panel{display:grid;grid-template-columns:1fr 1fr;width:100%;border-radius:20px;overflow:hidden;min-height:540px}
+.panel .l{background:var(--d2);padding:44px;display:flex;flex-direction:column;justify-content:space-between;gap:28px}
+.panel .l h3{font-size:40px;letter-spacing:-.015em;font-weight:500}
+.panel .l p{color:var(--t3);font-size:16px;line-height:1.45;font-weight:400;margin-top:14px}
+.panel ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:12px;font-size:16px}
+.panel li{display:flex;gap:12px;align-items:center}
+.panel .link{color:var(--red);font-size:16px}
+.panel .rgt{position:relative;overflow:hidden;background:var(--grey)}
+.assist{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:400px;background:#fff;color:#000;border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:14px;box-shadow:0 24px 60px rgba(0,0,0,.18)}
+.assist .hd{display:flex;justify-content:space-between;align-items:center;font-size:13px}
+.assist .hd span{display:flex;align-items:center;gap:8px}
+.assist .hd img{width:16px}
+.assist .lv{background:var(--grey);border-radius:999px;padding:4px 10px;font-size:11px}
+.assist q{font-size:16px;line-height:1.35;quotes:"“" "”"}
+.assist small{font-size:12px;color:var(--t3);font-weight:400}
+.bars{display:flex;justify-content:space-between;align-items:flex-end;height:90px}
+.bars i{display:block;width:20px;border-radius:999px;background:#000;transform-origin:bottom;animation:grow 1.2s var(--ease) both}
+.bars i.r{background:var(--red)}
+@keyframes grow{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+.assist .row{display:flex;justify-content:space-between;font-size:13px;padding:8px 0;border-top:1px solid var(--g2)}
+.assist .row span{color:var(--t2);font-weight:400}
+.custs{display:grid;grid-template-columns:1fr 1fr;gap:16px;width:100%}
+.cust{background:var(--d2);border-radius:20px;padding:28px;display:flex;flex-direction:column;gap:22px;font-size:20px}
+.cust .wm{display:flex;justify-content:space-between;align-items:center;font-size:22px;font-weight:600;letter-spacing:.14em}
+.cust .wm.lower{letter-spacing:-.01em;text-transform:lowercase}
+.uses .cta{display:flex;flex-direction:column;align-items:center;gap:20px;font-size:18px}
+
+/* RESOURCES */
+.res{display:grid;grid-template-columns:1fr 1fr;gap:24px;justify-items:center}
+.rescol{width:560px;display:flex;flex-direction:column;gap:28px;align-items:center}
+.rescol h3{font-size:48px;letter-spacing:-.018em;line-height:1.06;font-weight:500}
+.rescol .sub{font-size:17px;color:var(--t2);font-weight:400;margin-top:10px}
+.rows{width:100%;display:flex;flex-direction:column;gap:8px}
+.rowp{height:60px;border-radius:999px;background:var(--grey);display:flex;align-items:center;justify-content:space-between;padding:0 24px 0 20px;font-size:18px;transition:background .3s}
+.rowp:hover{background:var(--g2)}
+.rowp span{display:flex;align-items:center;gap:14px}
+
+/* SPOTLIGHT */
+.spot{display:flex;flex-direction:column;align-items:center;gap:48px}
+.spotgrid{display:grid;grid-template-columns:1fr 480px;gap:24px;width:100%;height:460px}
+.feat{position:relative;border-radius:var(--r);overflow:hidden;background:var(--red);color:#fff;padding:40px;display:flex;flex-direction:column;justify-content:space-between}
+.feat .light{position:absolute;inset:0}
+.feat .top{position:relative;display:flex;justify-content:space-between;align-items:center}
+.feat .top .eyebrow{color:#fff}
+.feat .tagc{height:32px;padding:0 14px;border-radius:999px;background:#fff;color:#000;font-size:12px;display:inline-flex;align-items:center}
+.feat h3{position:relative;font-size:48px;line-height:1.04;letter-spacing:-.015em;font-weight:500;max-width:600px}
+.feat .pill{position:relative;height:52px;padding:0 20px 0 24px;font-size:15px;align-self:flex-start;margin-top:24px}
+.stack{background:var(--grey);border-radius:var(--r);padding:12px;display:flex;flex-direction:column;gap:8px}
+.stack .it{flex:1;background:#fff;border-radius:16px;padding:22px 24px;display:flex;flex-direction:column;justify-content:space-between;gap:10px}
+.stack .it h4{margin:0;font-size:18px;line-height:1.25;font-weight:500}
+.stack .it .bt{display:flex;justify-content:space-between;align-items:center}
+.stack .it .eyebrow{color:var(--t2)}
+.stack .it .arr{color:var(--red)}
+
+/* PARTNERS */
+.partners{display:flex;flex-direction:column;align-items:center;gap:48px}
+.ecard{width:100%;background:var(--grey);border-radius:var(--r);padding:40px 48px;display:flex;justify-content:center}
+.orbit{position:relative;width:1264px;height:760px}
+.orbit .ring{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%)}
+.orbit .ring .d{position:absolute;border-radius:2px;background:var(--red)}
+.orbit .ring.a{animation:spin 90s linear infinite}
+.orbit .ring.b{animation:spin 140s linear infinite reverse}
+@keyframes spin{to{transform:translate(-50%,-50%) rotate(360deg)}}
+.orbit .ctr{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:520px;text-align:center;display:flex;flex-direction:column;align-items:center}
+.orbit .ctr b{font-size:104px;line-height:1;letter-spacing:-.04em;font-weight:500}
+.orbit .ctr em{font-style:normal;font-size:22px;margin-top:10px}
+.orbit .ctr p{font-size:15px;color:var(--t2);font-weight:400;line-height:1.45;margin-top:20px}
+.orbit .ctr .pill{margin-top:24px}
+.orbit .chip{position:absolute;background:#fff;height:48px;padding:0 20px 0 16px;font-size:15px;transform:translate(-50%,-50%)}
+
+/* CTA */
+.cta{position:relative;background:var(--ink);border-radius:var(--r);height:640px;overflow:hidden;display:flex;flex-direction:column;align-items:center;padding-top:64px;color:#fff;text-align:center}
+.cta h2{font-size:76px;line-height:1.02;letter-spacing:-.025em;font-weight:500}
+.cta .lead{max-width:520px;margin-top:18px;color:var(--t3)}
+.cta .btns{display:flex;gap:12px;margin-top:26px}
+.fan{position:absolute;inset:0;pointer-events:none}
+.fan .sq{position:absolute;border-radius:16%;opacity:.82;transform-origin:center;transition:transform 1.2s var(--ease),opacity 1.2s var(--ease)}
+.cta:not(.in) .fan .sq{transform:translateY(120px) rotate(0deg)!important;opacity:0}
+
+/* FOOTER */
+.footer{background:var(--grey);border-radius:var(--r);padding:48px;display:flex;flex-direction:column;gap:40px}
+.footer .top{display:flex;justify-content:space-between;gap:40px}
+.footer .fb{width:520px;display:flex;flex-direction:column;gap:20px}
+.footer .fb p{font-size:15px;line-height:1.45;color:var(--t2);font-weight:400}
+.footer .fchips{display:flex;gap:8px}
+.footer .fchips span{background:#fff;border-radius:999px;height:36px;padding:0 18px;display:inline-flex;align-items:center;font-size:13px}
+.footer .cols{display:flex;gap:24px}
+.footer .col{width:200px;display:flex;flex-direction:column;gap:14px;font-size:15px}
+.footer .col .eyebrow{color:var(--t2)}
+.footer hr{border:0;border-top:1px solid var(--g3);margin:0}
+.footer .legal{display:flex;justify-content:space-between;align-items:center;font-size:13px;color:var(--t3);font-weight:400}
+.footer .legal span{display:flex;gap:20px;align-items:center}
+.footer .legal .en{background:#fff;border-radius:999px;height:36px;padding:0 18px;display:inline-flex;align-items:center;color:#000;font-weight:500}
+</style>
+</head>
+<body>
+<div class="page">
+
+<!-- NAV -->
+<header class="nav section">
+  <div class="navbar">
+    <div class="brand"><img src="assets/icons/logo.svg" alt="">Denodo</div>
+    <nav class="links"><a href="#">Platform</a><a href="#">Solutions</a><a href="#">Customers</a><a href="#">Resources</a><a href="#">Partners</a><a href="#">Company</a></nav>
+    <div class="actions"><a href="#">Sign in</a><a class="pill red" href="#">Try the Denodo Platform</a></div>
+  </div>
+</header>
+<div class="announce section"><b>New</b> 2026 Gartner® Hype Cycle™ for Data Management — read the report →</div>
+
+<!-- HERO -->
+<section class="hero section">
+  <div class="light">
+    <div class="blob" style="left:-120px;top:420px;width:700px;height:380px;background:var(--sky);opacity:.55"></div>
+    <div class="blob" style="left:180px;top:480px;width:620px;height:360px;background:var(--berry);opacity:.9;animation-delay:-4s"></div>
+    <div class="blob" style="left:520px;top:520px;width:760px;height:380px;background:var(--red);opacity:.95;animation-delay:-8s"></div>
+    <div class="blob" style="left:900px;top:220px;width:520px;height:420px;background:var(--orchid);opacity:.8;animation-delay:-2s"></div>
+    <div class="blob" style="left:1050px;top:40px;width:420px;height:420px;background:var(--saffron);opacity:.7;animation-delay:-6s"></div>
+    <div class="blob" style="left:380px;top:120px;width:700px;height:360px;background:var(--grey);opacity:1;filter:blur(90px)"></div>
+  </div>
+  <div class="copy">
+    <h1 data-reveal>The AI Data Layer</h1>
+    <p class="lead" data-reveal data-delay="1">Denodo connects, governs and unifies your data in real time. One layer for AI systems and the people who run the business. Zero copy. Full governance.</p>
+    <div class="ctas" data-reveal data-delay="2"><a class="pill black" href="#">Try the Denodo Platform <span class="arr">→</span></a><a class="pill outline" href="#how">See how it works</a></div>
+  </div>
+  <div class="stats">
+    <div class="stat" data-reveal data-delay="2"><b>200+</b><span>data adaptors, one access point</span></div>
+    <div class="stat" data-reveal data-delay="3"><b>Zero</b><span>copies. Data stays where it lives</span></div>
+    <div class="stat" data-reveal data-delay="4"><b>75%</b><span>less data integration time</span></div>
+    <div class="stat" data-reveal data-delay="5"><b>One</b><span>semantic layer for people, AI and APIs</span></div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="how section" id="how">
+  <div class="pin">
+  <div class="stick">
+  <h2 class="title center" data-reveal>One layer between every<br>source and every consumer.</h2>
+  <div class="layers">
+    <div class="band" id="consumers" data-at="0.04" data-x="0,0.22">
+      <div class="ltitle">Consumers</div>
+      <div class="chips">
+        <span class="chip" data-at="0.07"><img src="assets/icons/analytics.svg" alt="">Analytics</span>
+        <span class="chip" data-at="0.09"><img src="assets/icons/self.svg" alt="">APIs</span>
+        <span class="chip" data-at="0.11"><img src="assets/icons/person.svg" alt="">Self-service</span>
+        <span class="chip" data-at="0.13"><img src="assets/icons/ai.svg" alt="">Gen AI</span>
+        <span class="chip active" id="hiTop" data-at="0.15"><img src="assets/icons/agents.svg" alt="">Agentic AI</span>
+      </div>
+    </div>
+    <div class="flow up" id="flowUp" data-from="0.24" data-to="0.36" data-short="0.54"></div>
+    <div class="band red" data-at="0.38" data-x="0,0.54">
+      <span class="live"><i class="datum"></i>Live</span>
+      <div class="ltitle">The AI Data Layer</div>
+      <div class="chips">
+        <span class="chip on-red"><img src="assets/icons/zero.svg" alt="">Zero-Copy Delivery</span>
+        <span class="chip on-red"><img src="assets/icons/governed.svg" alt="">Governed Access</span>
+        <span class="chip on-red"><img src="assets/icons/semantic.svg" alt="">Semantic Trust</span>
+        <span class="chip on-red"><img src="assets/icons/connect.svg" alt="">Universal Connectivity</span>
+      </div>
+    </div>
+    <div class="flow down" id="flowDown" data-from="0.56" data-to="0.68" data-short="0.88"></div>
+    <div class="band" id="sources" data-at="0.70" data-x="0,0.88">
+      <div class="ltitle" id="srcLabel">Sources</div>
+      <div class="chips">
+        <span class="chip" data-at="0.72"><i class="datum"></i>AWS</span>
+        <span class="chip" data-at="0.74"><i class="datum"></i>SAP</span>
+        <span class="chip active" id="hiBot" data-at="0.76"><i class="datum"></i>Snowflake</span>
+        <span class="chip" data-at="0.78"><i class="datum"></i>Azure</span>
+        <span class="chip" data-at="0.80"><i class="datum"></i>Databricks</span>
+        <span class="chip" data-at="0.82"><i class="datum"></i>Lakehouse</span>
+        <span class="chip" data-at="0.84"><i class="datum"></i>SaaS</span>
+      </div>
+    </div>
+  </div>
+  </div>
+  </div>
+</section>
+
+<!-- WHY DENODO -->
+<section class="why section" id="why">
+  <div class="wpin">
+    <div class="wstick">
+      <div class="bg"></div>
+      <div class="thread" id="thread"></div>
+      <div class="pulse" id="pulse"></div>
+    </div>
+  </div>
+  <div class="wcopy">
+    <h2 class="title" data-reveal>Because you want to transform<br>to an agentic enterprise.</h2>
+    <p class="lead" data-reveal data-delay="1">The bottleneck is not AI capability, it is data. Data from hundreds of sources, locked in silos, inconsistently governed, and semantically fragmented.</p>
+  </div>
+</section>
+
+<!-- CORE -->
+<section class="core section">
+  <h2 class="title center" data-reveal>Connected, governed, live<br>and semantically coherent.</h2>
+  <div class="cards4">
+    <div class="card" data-reveal data-delay="1"><img src="assets/icons/connect.svg" alt=""><div><h3>Universal connectivity</h3><div class="tag">All sources. One access point.</div><p>Unified access to everything. Lakehouses, legacy, SaaS, APIs and streaming feeds become one coherent whole.</p></div></div>
+    <div class="card" data-reveal data-delay="2"><img src="assets/icons/zero.svg" alt=""><div><h3>Zero-copy delivery</h3><div class="tag">Live data. No movement.</div><p>Real-time read-write access to data exactly where it lives. AI always sees the current state of the enterprise.</p></div></div>
+    <div class="card" data-reveal data-delay="3"><img src="assets/icons/governed.svg" alt=""><div><h3>Governed access</h3><div class="tag">Security that travels with data.</div><p>Fine-grained access control, de-identification and cross-border data sovereignty, applied centrally and enforced everywhere.</p></div></div>
+    <div class="card" data-reveal data-delay="4"><img src="assets/icons/semantic.svg" alt=""><div><h3>Semantic trust</h3><div class="tag">One truth. For everyone.</div><p>One unified semantic layer for the entire data estate. Every consumer, human, AI or API, works with the same truth.</p></div></div>
+  </div>
+</section>
+
+<!-- TRUSTED -->
+<section class="trusted section">
+  <h3 data-reveal>Trusted by leading data and AI teams</h3>
+  <div class="logos" data-reveal data-delay="1">
+    <img src="assets/logos/customer_bnp_paribas_2x.png" alt="BNP Paribas">
+    <img src="assets/logos/customer_cigna_healthcare_2x.png" alt="Cigna Healthcare">
+    <img src="assets/logos/customer_credit_agricole_2x.png" alt="Crédit Agricole">
+    <img src="assets/logos/customer_engie_2x.png" alt="Engie">
+    <img src="assets/logos/customer_estes_2x.png" alt="Estes">
+    <img src="assets/logos/customer_european_commission_2x.png" alt="European Commission">
+  </div>
+</section>
+
+<!-- USE CASES -->
+<section class="uses section">
+  <h2 class="title center" data-reveal>Unify all your data,<br>from the data lakehouse and beyond.</h2>
+  <div class="rail" data-reveal data-delay="1"><div class="on">AI agents and apps <i class="datum"></i></div><div>Lakehouse optimization</div><div>Data sharing</div></div>
+  <div class="panel" data-reveal data-delay="2">
+    <div class="l">
+      <div><h3>Deliver trustworthy agentic AI</h3><p>Accelerate agent development with real-time, trusted enterprise data and active context, without fragile pipelines or costly re-ingestion.</p></div>
+      <ul>
+        <li><i class="datum"></i>Ground agents in accurate business semantics</li>
+        <li><i class="datum"></i>Scale safely with centralized governance and security</li>
+        <li><i class="datum"></i>Boost AI accuracy with active context</li>
+        <li><i class="datum"></i>Streamline live, governed data access via MCP</li>
+        <li><i class="datum"></i>Develop and deliver agents on unified, trusted data with the AI SDK</li>
+      </ul>
+      <a class="link" href="#">Learn more about agentic AI &nbsp;→</a>
+    </div>
+    <div class="rgt">
+      <div class="blob" style="left:180px;top:-80px;width:540px;height:440px;background:var(--red);opacity:.95"></div>
+      <div class="blob" style="left:380px;top:260px;width:380px;height:340px;background:var(--orchid);opacity:.85;animation-delay:-5s"></div>
+      <div class="blob" style="left:-60px;top:320px;width:320px;height:280px;background:var(--sky);opacity:.7;animation-delay:-9s"></div>
+      <div class="blob" style="left:-80px;top:-60px;width:300px;height:260px;background:var(--saffron);opacity:.6;animation-delay:-3s"></div>
+      <div class="assist">
+        <div class="hd"><span><img src="assets/icons/logo.svg" alt="">Denodo Assistant</span><span class="lv">Live</span></div>
+        <q>Which customers are most at risk of churn this quarter, and why?</q>
+        <small>Grounded in 3 governed views · 0.6 s</small>
+        <div class="bars"><i style="height:30px"></i><i style="height:46px;animation-delay:.05s"></i><i style="height:62px;animation-delay:.1s"></i><i style="height:40px;animation-delay:.15s"></i><i style="height:78px;animation-delay:.2s"></i><i class="r" style="height:90px;animation-delay:.25s"></i><i style="height:58px;animation-delay:.3s"></i><i style="height:70px;animation-delay:.35s"></i><i style="height:84px;animation-delay:.4s"></i><i style="height:66px;animation-delay:.45s"></i><i style="height:50px;animation-delay:.5s"></i><i style="height:38px;animation-delay:.55s"></i></div>
+        <div><div class="row"><span>Enterprise · EMEA</span>1,284 accounts</div><div class="row"><span>Mid-market · NA</span>862 accounts</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="custs" data-reveal data-delay="3">
+    <div class="cust">Delivered FestoGPT, natural-language query for all employees<div class="wm">FESTO<span style="font-weight:400;letter-spacing:0">→</span></div></div>
+    <div class="cust">Personalized wealth-management customer engagement through AI<div class="wm lower">:alexforbes</div></div>
+  </div>
+  <div class="cta" data-reveal data-delay="4">Learn more about Denodo’s customers<a class="pill white" href="#">Customer successes <span class="arr">→</span></a></div>
+</section>
+
+<!-- RESOURCES -->
+<section class="res section">
+  <div class="rescol" data-reveal>
+    <div class="center"><h3>See what’s new</h3><div class="sub">Our latest news and events</div></div>
+    <div class="rows"><a class="rowp" href="#"><span><i class="datum"></i>Announcements</span>→</a><a class="rowp" href="#"><span><i class="datum"></i>In the news</span>→</a><a class="rowp" href="#"><span><i class="datum"></i>Podcast</span>→</a><a class="rowp" href="#"><span><i class="datum"></i>Upcoming events</span>→</a></div>
+  </div>
+  <div class="rescol" data-reveal data-delay="2">
+    <div class="center"><h3>Learn and engage</h3><div class="sub">Succeed with Denodo</div></div>
+    <div class="rows"><a class="rowp" href="#"><span><i class="datum"></i>Blog</span>→</a><a class="rowp" href="#"><span><i class="datum"></i>YouTube channel</span>→</a><a class="rowp" href="#"><span><i class="datum"></i>Community</span>→</a><a class="rowp" href="#"><span><i class="datum"></i>Training</span>→</a></div>
+  </div>
+</section>
+
+<!-- SPOTLIGHT -->
+<section class="spot section">
+  <h2 class="title center" data-reveal>In the spotlight.</h2>
+  <div class="spotgrid">
+    <div class="feat" data-reveal data-delay="1">
+      <div class="light">
+        <div class="blob" style="left:40px;top:-40px;width:900px;height:520px;background:var(--red);opacity:1"></div>
+        <div class="blob" style="left:520px;top:-120px;width:520px;height:420px;background:var(--orchid);opacity:.9;animation-delay:-5s"></div>
+        <div class="blob" style="left:-100px;top:260px;width:520px;height:360px;background:var(--berry);opacity:.9;animation-delay:-9s"></div>
+        <div class="blob" style="left:620px;top:300px;width:340px;height:260px;background:var(--saffron);opacity:.6;animation-delay:-2s"></div>
+        <div class="blob" style="left:300px;top:360px;width:320px;height:220px;background:var(--sky);opacity:.5;animation-delay:-7s"></div>
+      </div>
+      <div class="top"><span class="eyebrow">Analyst report</span><span class="tagc">Featured</span></div>
+      <div><h3>2026 Gartner® Hype Cycle™ for Data Management</h3><a class="pill white" href="#">Learn more <span class="arr">→</span></a></div>
+    </div>
+    <div class="stack" data-reveal data-delay="2">
+      <div class="it"><h4>Research Report: The ROI of an AI Data Layer for Agentic AI</h4><div class="bt"><span class="eyebrow">Research</span><span class="arr">→</span></div></div>
+      <div class="it"><h4>The AI Trust Gap Report</h4><div class="bt"><span class="eyebrow">Report</span><span class="arr">→</span></div></div>
+      <div class="it"><h4>Gartner® Report: The 3 Core Components of the Context Layer for AI Agents</h4><div class="bt"><span class="eyebrow">Analyst report</span><span class="arr">→</span></div></div>
+    </div>
+  </div>
+  <a href="#" style="color:var(--red);font-size:16px" data-reveal>See more resources →</a>
+</section>
+
+<!-- PARTNERS -->
+<section class="partners section">
+  <h2 class="title center" data-reveal>Denodo partners</h2>
+  <div class="ecard" data-reveal data-delay="1">
+    <div class="orbit" id="orbit">
+      <div class="ring a" id="ringA"></div>
+      <div class="ring b" id="ringB"></div>
+      <div class="ctr"><b>300+</b><em>active partnerships</em><p>Denodo is proud to count more than 300 active partnerships. These partnerships vary from technology alliance partners, solution consultancy and regional sales, to marketing and delivery partners.</p><a class="pill black" href="#">Find a partner <span class="arr">→</span></a></div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta section" id="cta">
+  <div class="fan" id="fan"></div>
+  <h2 data-reveal>What’s next?</h2>
+  <p class="lead" data-reveal data-delay="1">Learn more about Denodo’s products and services to enable your data for the success of your digital transformation initiatives.</p>
+  <div class="btns" data-reveal data-delay="2"><a class="pill white" href="#">Try Denodo</a><a class="pill outline light" href="#">Learn more</a></div>
+</section>
+
+<!-- FOOTER -->
+<footer class="footer section">
+  <div class="top">
+    <div class="fb">
+      <div class="brand" style="color:#000"><img src="assets/icons/logo.svg" alt="">Denodo</div>
+      <p>Denodo is the AI data layer company. The award-winning Denodo Platform powers trustworthy agents and applications, transforming enterprise data into reliable insights for analytics and self-service. Organizations worldwide deploy Denodo alongside their data lakehouses to deliver AI-ready, business-ready data in a fraction of the time, achieving up to 4x faster time to insight, 345% ROI, and 10x better performance.</p>
+      <div class="fchips"><span>Free download · Denodo Express</span><span>Managed cloud service · Agora</span></div>
+    </div>
+    <div class="cols">
+      <div class="col"><span class="eyebrow">Links</span><a href="#">About Us</a><a href="#">AI Data Layer</a><a href="#">Denodo Platform</a><a href="#">Solutions</a><a href="#">News &amp; Media</a></div>
+      <div class="col"><span class="eyebrow">Contact</span><a href="#">Contact Us</a><a href="#">Denodo Offices</a><a href="#">Denodo Support Site</a><a href="#">Partner Portal</a><a href="#">Community</a></div>
+    </div>
+  </div>
+  <hr>
+  <div class="legal"><div>Copyrights © 2026 Denodo Technologies</div><span><a href="#">Terms of Use</a><a href="#">Privacy Notice</a><a href="#">Cookie Notice</a><a href="#">CCPA/CPRA</a><a href="#">Denodo Security</a><a href="#">Modern Slavery Act Statement</a><span class="en">EN</span></span></div>
+</footer>
+
+</div>
+
+<script>
+(() => {
+  const RED = '#fb3229';
+  const qs = (s, r = document) => r.querySelector(s);
+  const el = (tag, cls, parent) => { const n = document.createElement(tag); if (cls) n.className = cls; parent.appendChild(n); return n; };
+  const seeded = (s) => () => { s = (s * 9301 + 49297) % 233280; return s / 233280; };
+
+  /* ---------- generic reveal ---------- */
+  const io = new IntersectionObserver((es) => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }), { threshold: 0.15, rootMargin: '0px 0px -8% 0px' });
+  document.querySelectorAll('[data-reveal]').forEach(n => io.observe(n));
+  const ctaIO = new IntersectionObserver((es) => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); ctaIO.unobserve(e.target); } }), { threshold: 0.3 });
+  ctaIO.observe(qs('#cta'));
+
+  /* ---------- How it works: flow dots ---------- */
+  // a single pixel line down the middle of each gap, growing in size toward the next layer, same language as the thread into Why
+  const flowDots = [];
+  function buildFlow(zone) {
+    zone.innerHTML = '';
+    const H = 96, step = 20, n = Math.floor(H / step), y0 = (H - (n - 1) * step) / 2;   // the zone's open height; it may be mid-transition when rebuilt
+    const from = +zone.dataset.from, to = +zone.dataset.to;
+    for (let i = 0; i < n; i++) {
+      const t = i / (n - 1), s = Math.round(6 + 5 * t), o = (0.35 + 0.65 * t).toFixed(2);
+      const d = el('i', 'd', zone);
+      d.style.cssText = `top:${y0 + i * step - s / 2}px;width:${s}px;height:${s}px;--s:${s}px;--o:${o};--dl:${(i * 0.18).toFixed(2)}s`;
+      flowDots.push({ n: d, at: from + (to - from) * t });
+    }
+  }
+  const flowUp = qs('#flowUp'), flowDown = qs('#flowDown');
+  const buildFlows = () => { flowDots.length = 0; buildFlow(flowUp); buildFlow(flowDown); };
+
+  /* ---------- Why: pulse + thread ---------- */
+  const pulse = qs('#pulse'), thread = qs('#thread'), why = qs('#why'), wpin = why.querySelector('.wpin'), srcLabel = qs('#srcLabel');
+  const pulseDots = [], threadDots = [];
+  const whyUp = () => parseFloat(getComputedStyle(why).getPropertyValue('--up'));   // how far the Why block overlaps the pinned How block
+  // the star: built on white, kept while the background switches to black.
+  // Dots sit on a 36px grid along each spoke so the thread above can land on the same grid.
+  const PC = 320, PR = 324, PSTEP = 36;
+  function buildPulse(zone, list) {
+    list.length = 0; zone.innerHTML = '';
+    const dot = (x, y, r) => { const t = r / PR, size = Math.round(18 - 6 * t); const d = el('i', 'd', zone);
+      d.style.cssText = `left:${PC + x - size / 2}px;top:${PC + y - size / 2}px;width:${size}px;height:${size}px;--o:${Math.max(0.06, 1 - t * 0.96).toFixed(2)}`;
+      list.push({ n: d, t }); };
+    dot(0, 0, 0);
+    const ring = (spokes, off, r0) => { for (let s = 0; s < spokes; s++) { const a = (s + off) * Math.PI * 2 / spokes;
+      for (let r = r0; r <= PR; r += PSTEP) dot(Math.cos(a) * r, Math.sin(a) * r, r); } };
+    ring(8, 0, PSTEP); ring(8, 0.5, PSTEP * 3); ring(16, 0.5, PSTEP * 6);   // 8 spokes from the centre, 16 further out, 32 at the rim
+  }
+  function buildThread() {
+    threadDots.length = 0; thread.innerHTML = '';
+    // the Sources label sits in the pinned block, whose bottom edge the Why block overlaps by --up once unpinned,
+    // so measure against those edges, with the accordion forced into its final state (transitions off)
+    how.classList.add('measure');
+    xs.forEach(({ n, from, to }) => n.classList.toggle('c', !(1 >= from && 1 < to)));
+    shorts.forEach(({ n, at }) => n.classList.toggle('short', 1 >= at));
+    const lr = qs('#sources').getBoundingClientRect(), st = stick.getBoundingClientRect();
+    onScroll();                                   // put the accordion back as it should be at this scroll position, still without transitions
+    how.classList.remove('measure');
+    const startY = (lr.bottom - st.bottom) + whyUp() + 40;   // just under the Sources label, relative to the Why block's top
+    const cy = pulse.offsetTop + PC;               // star centre, relative to the Why block's top
+    const ys = []; for (let y = cy - PR - PSTEP; y >= startY; y -= PSTEP) ys.unshift(y);   // continue the burst's top spoke upward on the same grid
+    ys.forEach((y, i) => { const t = ys.length > 1 ? i / (ys.length - 1) : 1; const s = Math.round(6 + 6 * t);
+      const d = el('i', 'd', thread); d.style.cssText = `top:${y - s / 2}px;width:${s}px;height:${s}px;--o:${(0.15 + 0.45 * t).toFixed(2)}`; threadDots.push({ n: d, t }); });
+  }
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+
+  /* ---------- How it works: pinned layer reveal ---------- */
+  const how = qs('#how'), pin = how.querySelector('.pin'), stick = how.querySelector('.stick');
+  const stages = [...how.querySelectorAll('[data-at]')].map(n => ({ n, at: +n.dataset.at }));
+  // accordion: a layer is expanded (red, chips) while progress is inside its data-x range, folded to a label otherwise
+  const xs = [...how.querySelectorAll('[data-x]')].map(n => { const [from, to] = n.dataset.x.split(',').map(Number); return { n, from, to }; });
+  const shorts = [...how.querySelectorAll('[data-short]')].map(n => ({ n, at: +n.dataset.short }));
+  function onScroll() {
+    const vh = window.innerHeight;
+    // layers: progress runs from the section's top reaching mid-screen through the whole pinned range
+    const hr = pin.getBoundingClientRect(), lead = vh * 0.5;
+    const p0 = clamp((lead - hr.top) / (lead + hr.height - vh), 0, 1);
+    stages.forEach(({ n, at }) => n.classList.toggle('in', p0 >= at));
+    flowDots.forEach(({ n, at }) => n.classList.toggle('lit', p0 >= at));
+    xs.forEach(({ n, from, to }) => n.classList.toggle('c', !(p0 >= from && p0 < to)));
+    shorts.forEach(({ n, at }) => n.classList.toggle('short', p0 >= at));
+    // Why, phase 1 (still white): once How unpins, the thread lights top-down out of Sources, then the star radiates from its centre,
+    // as the block's top travels from where the How pin ends (--up above the viewport bottom) to 10% of the viewport
+    const wr = wpin.getBoundingClientRect(), up = whyUp();
+    const p1 = clamp((vh - up - wr.top) / (vh * 0.9 - up), 0, 1);
+    threadDots.forEach(({ n, t }) => n.classList.toggle('lit', t <= p1 / 0.45));
+    pulseDots.forEach(({ n, t }) => n.classList.toggle('lit', t <= (p1 - 0.35) / 0.65 * 1.1));
+    // phase 2 (pinned): the black band fades in behind the finished star, then the copy scrolls up in it
+    const p2 = clamp(-wr.top / (wr.height - vh), 0, 1);
+    why.classList.toggle('dark', p2 > 0.2);
+  }
+
+  /* ---------- Partners orbit ---------- */
+  function buildOrbit() {
+    const ringA = qs('#ringA'), ringB = qs('#ringB'), orbit = qs('#orbit');
+    const mk = (ring, n, rx, ry, size, base, amp, ph) => { ring.style.width = rx * 2 + 'px'; ring.style.height = ry * 2 + 'px'; ring.innerHTML = '';
+      for (let i = 0; i < n; i++) { const a = i * Math.PI * 2 / n; const d = el('i', 'd', ring);
+        d.style.cssText = `left:${rx + Math.cos(a) * rx - size / 2}px;top:${ry + Math.sin(a) * ry - size / 2}px;width:${size}px;height:${size}px;opacity:${(base + amp * Math.abs(Math.sin(a * ph))).toFixed(2)}`; } };
+    mk(ringA, 44, 330, 218, 8, 0.3, 0.7, 2); mk(ringB, 64, 430, 282, 6, 0.12, 0.3, 3);
+    orbit.querySelectorAll('.chip').forEach(c => c.remove());
+    const partners = ['Google Cloud', 'AWS', 'Microsoft Azure', 'Snowflake', 'Databricks', 'Alibaba Cloud', 'Collibra', 'Deloitte', 'Accenture', 'KPMG', 'Infosys', 'Wipro', 'Atos'];
+    partners.forEach((p, i) => { const a = -Math.PI / 2 + i * Math.PI * 2 / partners.length; const c = el('span', 'chip', orbit);
+      c.innerHTML = `<i class="datum"></i>${p}`; c.style.left = (632 + Math.cos(a) * 552) + 'px'; c.style.top = (380 + Math.sin(a) * 336) + 'px'; });
+  }
+
+  /* ---------- CTA fan ---------- */
+  function buildFan() {
+    const fan = qs('#fan'); fan.innerHTML = '';
+    const W = fan.clientWidth, H = fan.clientHeight, cx = W / 2, cy = H + 90;
+    const stops = [[0, [242, 120, 74]], [0.3, [239, 59, 59]], [0.55, [204, 47, 106]], [0.8, [180, 85, 214]], [1, [162, 75, 216]]];
+    const col = (t) => { for (let i = 0; i < stops.length - 1; i++) { const [a, A] = stops[i], [b, B] = stops[i + 1]; if (t <= b) { const u = (t - a) / (b - a); return `rgb(${A.map((v, k) => Math.round(v + (B[k] - v) * u)).join(',')})`; } } return 'rgb(162,75,216)'; };
+    for (let th = -80; th <= 80; th += 20) for (const r of [160, 265, 370, 475]) {
+      const rad = th * Math.PI / 180, px = cx + r * Math.sin(rad) * 1.25, py = cy - r * Math.cos(rad);
+      if (py < 330 || px < 40 || px > W - 40) continue;
+      const s = Math.round(34 + r * 0.04); const sq = el('i', 'sq', fan);
+      sq.style.cssText = `left:${px - s / 2}px;top:${py - s / 2}px;width:${s}px;height:${s}px;background:${col((th + 80) / 160)};transform:rotate(${th}deg);transition-delay:${(r / 475 * 0.5).toFixed(2)}s`;
+    }
+  }
+
+  document.querySelectorAll('a[href^="#"]').forEach(a => a.addEventListener('click', e => { const t = document.querySelector(a.getAttribute('href')); if (!t) return; e.preventDefault(); t.scrollIntoView({ behavior: 'smooth', block: 'start' }); }));
+
+  function buildAll() { buildFlows(); buildPulse(pulse, pulseDots); buildThread(); buildOrbit(); buildFan(); onScroll(); }
+  window.addEventListener('scroll', onScroll, { passive: true });   // scroll events already arrive once per frame; rAF would stall in a hidden tab
+  window.addEventListener('resize', () => requestAnimationFrame(buildAll));
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(buildAll); else buildAll();
+  window.addEventListener('load', buildAll);
+})();
+</script>
+</body>
+</html>
