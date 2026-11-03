@@ -59,14 +59,18 @@ h1,h2,h3,p{margin:0}
 .announce b{font-size:13px;font-weight:600;letter-spacing:.08em;color:var(--red)}
 
 /* HERO */
-.hero{position:relative;height:800px;border-radius:var(--r);background:var(--grey);overflow:hidden;display:flex;flex-direction:column;align-items:center;padding-top:64px}
-.hero .copy{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;gap:28px;max-width:720px;text-align:center}
-.hero h1{font-size:80px;line-height:1;letter-spacing:-.035em;font-weight:500}
-.hero .lead{max-width:560px}
+/* the hero bleeds to the viewport edges as you scroll into it (set inline), locks in full-screen and holds there for 300px of scroll before it leaves;
+   its copy moves down as it widens so the kicker stays clear of the nav once locked */
+.hpin{height:calc(max(800px, 100vh) + 300px)}
+.hero{position:sticky;top:0;width:100%;height:max(800px, 100vh);border-radius:var(--r);background:var(--grey);overflow:hidden;display:flex;flex-direction:column;align-items:center;padding-top:calc(72px + var(--b,0) * 60px)}
+.hero .copy{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;gap:32px;max-width:930px;text-align:center}
+.hero .kicker{font-size:32px;line-height:1.2;font-weight:500}
+.hero h1{font-size:76px;line-height:1.05;letter-spacing:-.03em;font-weight:500}
+.hero .lead{max-width:540px}
 .hero .ctas{display:flex;gap:12px}
-.hero .light{position:absolute;inset:0;z-index:1;pointer-events:none}
+.hero .swoosh{position:absolute;left:0;top:9%;width:100%;height:91%;object-fit:cover;object-position:center bottom;z-index:1;pointer-events:none}   /* the design's background layer, rendered from Figma at its placed size */
 .blob{position:absolute;border-radius:50%;filter:blur(70px);will-change:transform;animation:drift 14s ease-in-out infinite alternate}
-.hero .stats{position:absolute;z-index:2;left:40px;right:40px;bottom:0;height:160px;border-top:1px solid rgba(0,0,0,.12);display:grid;grid-template-columns:repeat(4,1fr);padding-top:36px}
+.hero .stats{position:absolute;z-index:2;left:calc(40px + var(--bleed,0px));right:calc(40px + var(--bleed,0px));bottom:0;height:160px;border-top:1px solid rgba(0,0,0,.12);display:grid;grid-template-columns:repeat(4,1fr);padding-top:36px}
 .hero .stat{padding:0 24px;position:relative}
 .hero .stat+.stat::before{content:"";position:absolute;left:0;top:4px;width:1px;height:40px;background:rgba(0,0,0,.12)}
 .hero .stat:first-child{padding-left:0}
@@ -118,22 +122,30 @@ h1,h2,h3,p{margin:0}
 
 /* WHY (black band) */
 /* Why starts on white: the thread runs out of Sources and builds the star while the block scrolls up,
-   then the block pins and the black band fades in behind the star before the copy scrolls up in it */
+   then the block pins and goes dark: the band bleeds to the viewport edges, the thread fades, the star slides up
+   and the copy appears under it, all in the one pinned viewport */
 .why{--up:400px;position:relative;margin-top:calc(-96px - var(--up))}   /* overlaps the empty bottom of the pinned How block by --up */
-.why .wpin{height:calc(100vh + 500px)}   /* the extra height is the scroll range of the background switch */
+.why .wpin{height:calc(100vh + 300px)}   /* the extra height is the scroll range of the dark switch */
 .why .wstick{position:sticky;top:0;height:100vh}
-.why .bg{position:absolute;inset:0;background:var(--ink);border-radius:var(--r) var(--r) 0 0;opacity:0;transition:opacity .9s var(--ease)}
-.why.dark .bg{opacity:1}
-.why .wcopy{background:var(--ink);border-radius:0 0 var(--r) var(--r);padding:40px 40px 88px;display:flex;flex-direction:column;align-items:center;gap:24px;text-align:center;color:#fff}
-.wstick .pulse{top:calc(50% - 320px)}
-.why .title{max-width:none;white-space:nowrap;transition:opacity 1s var(--ease),transform 1s var(--ease)}
+.why .bg{position:absolute;inset:0;background:var(--ink);border-radius:var(--r) var(--r) 0 0;opacity:0;transition:opacity .9s var(--ease),left .9s var(--ease),right .9s var(--ease),border-radius .9s var(--ease)}
+.why.dark .bg{opacity:1;left:calc(50% - 50vw);right:calc(50% - 50vw);border-radius:0}   /* full bleed: the whole viewport goes dark */
+.why.leaving .bg{transition:none}   /* on the way out the band's width and corners follow the scroll, set inline */
+.why .copy{position:absolute;left:0;right:0;bottom:64px;display:flex;flex-direction:column;align-items:center;gap:24px;text-align:center;color:#fff;pointer-events:none}
+.why .copy > *{opacity:0;transform:translateY(24px);transition:opacity 1s var(--ease),transform 1s var(--ease)}
+.why.dark .copy > *{opacity:1;transform:none}
+.why.dark .copy .lead{transition-delay:.15s}
+.why .title{max-width:none;white-space:nowrap}
 .why .lead{color:var(--t3);max-width:760px}
-.thread{position:absolute;left:50%;top:0;width:0;height:0;overflow:visible}
-.thread .d{position:absolute;left:0;border-radius:2px;background:var(--red);transform:translateX(-50%);opacity:.08;transition:opacity .25s linear,transform .25s var(--ease)}
-.thread .d.lit{opacity:var(--o)}
-.pulse{position:absolute;left:50%;top:0;width:640px;height:640px;transform:translateX(-50%);transform-origin:center;will-change:transform}
+.thread{position:absolute;left:50%;top:0;width:0;height:0;overflow:visible;transition:opacity .6s var(--ease)}
+.why.dark .thread{opacity:0}   /* the thread has done its job once the band is dark */
+.thread .d{position:absolute;left:0;border-radius:2px;background:var(--red);transform:translateX(-50%) scale(.4);opacity:0;transition:opacity .5s var(--ease),transform .7s var(--ease)}   /* invisible until the wave reaches it: the block slides up under the pinned layers before the wave starts, so a faint track would seem to arrive from below */
+.thread .d.lit{opacity:var(--o);transform:translateX(-50%) scale(1)}
+.pulse{position:absolute;left:50%;top:0;width:640px;height:640px;transform:translateX(-50%);transform-origin:center;will-change:transform;transition:top 1s var(--ease),transform 1s var(--ease)}
 .pulse .d{position:absolute;border-radius:2px;background:var(--red);opacity:0;transform:scale(.4);transition:opacity .5s var(--ease),transform .7s var(--ease)}
 .pulse .d.lit{opacity:var(--o);transform:scale(1)}
+/* once the band is dark the star breathes: a slow, soft ripple that travels from the centre to the rim */
+.why.dark .pulse .d.lit{animation:breatheStar 5s ease-in-out infinite;animation-delay:calc(var(--t) * 1.5s)}
+@keyframes breatheStar{0%,100%{transform:scale(1);opacity:var(--o)}50%{transform:scale(1.22);opacity:min(1, calc(var(--o) * 1.4))}}
 
 /* CORE */
 .core{display:flex;flex-direction:column;align-items:center;gap:56px}
@@ -147,11 +159,15 @@ h1,h2,h3,p{margin:0}
 /* TRUSTED */
 .trusted{display:flex;flex-direction:column;align-items:center;gap:48px;padding:16px 0}
 .trusted h3{font-size:26px;font-weight:500;letter-spacing:-.01em}
-.logos{display:flex;justify-content:center;gap:56px;align-items:center;flex-wrap:wrap}
-.logos img{height:64px;width:auto;opacity:.95}
+/* the full strip from the design, scrolling by itself: the 16 logos are laid out twice and the track slides one set's width, so the loop is seamless */
+.logos{width:100%;overflow:hidden;-webkit-mask-image:linear-gradient(90deg,transparent,#000 10%,#000 90%,transparent);mask-image:linear-gradient(90deg,transparent,#000 10%,#000 90%,transparent)}
+.logos .track{display:flex;gap:24px;width:max-content;animation:marquee 70s linear infinite}
+.logos:hover .track{animation-play-state:paused}
+.logos img{flex:none;width:179px;height:90px;object-fit:contain;opacity:.95}
+@keyframes marquee{to{transform:translateX(calc(-50% - 12px))}}
 
 /* USE CASES */
-.uses{background:var(--ink);border-radius:var(--r);padding:72px 40px 72px;display:flex;flex-direction:column;align-items:center;gap:40px;color:#fff}
+.uses{background:var(--ink);border-radius:var(--r);padding:72px 40px 72px;display:flex;flex-direction:column;align-items:center;gap:40px;color:#fff}   /* while on screen it bleeds to the viewport edges, set inline with the scroll; its content keeps its width */
 .uses .title{font-size:48px;max-width:900px}
 .rail{display:flex;background:var(--d2);border-radius:999px;padding:6px;gap:6px}
 .rail div{height:60px;padding:0 36px;display:flex;align-items:center;gap:14px;border-radius:999px;font-size:16px}
@@ -182,7 +198,7 @@ h1,h2,h3,p{margin:0}
 .cust{background:var(--d2);border-radius:20px;padding:28px;display:flex;flex-direction:column;gap:22px;font-size:20px}
 .cust .wm{display:flex;justify-content:space-between;align-items:center;font-size:22px;font-weight:600;letter-spacing:.14em}
 .cust .wm.lower{letter-spacing:-.01em;text-transform:lowercase}
-.uses .cta{display:flex;flex-direction:column;align-items:center;gap:20px;font-size:18px}
+.uses .more{display:flex;flex-direction:column;align-items:center;gap:20px;font-size:18px}
 
 /* RESOURCES */
 .res{display:grid;grid-template-columns:1fr 1fr;gap:24px;justify-items:center}
@@ -212,14 +228,13 @@ h1,h2,h3,p{margin:0}
 .stack .it .arr{color:var(--red)}
 
 /* PARTNERS */
-.partners{display:flex;flex-direction:column;align-items:center;gap:48px}
-.ecard{width:100%;background:var(--grey);border-radius:var(--r);padding:40px 48px;display:flex;justify-content:center}
-.orbit{position:relative;width:1264px;height:760px}
+.partners{display:flex;flex-direction:column;align-items:center}
+/* the whole section fits one viewport: the title sits inside the grey card and the orbit scales down (inline) when the viewport is short */
+.ecard{width:100%;background:var(--grey);border-radius:var(--r);padding:32px 48px;display:flex;flex-direction:column;align-items:center;gap:16px}   /* bleeds to the viewport edges while on screen, like the Use cases block */
+.fit{width:100%;display:flex;justify-content:center;overflow:visible}
+.orbit{position:relative;width:1180px;height:700px;flex:none;transform-origin:top center}
 .orbit .ring{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%)}
-.orbit .ring .d{position:absolute;border-radius:2px;background:var(--red)}
-.orbit .ring.a{animation:spin 90s linear infinite}
-.orbit .ring.b{animation:spin 140s linear infinite reverse}
-@keyframes spin{to{transform:translate(-50%,-50%) rotate(360deg)}}
+.orbit .ring .d{position:absolute;left:0;top:0;border-radius:2px;background:var(--red)}   /* placed by transform: the dots drift slowly along their ellipse (JS), the ring itself never rotates */
 .orbit .ctr{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:520px;text-align:center;display:flex;flex-direction:column;align-items:center}
 .orbit .ctr b{font-size:104px;line-height:1;letter-spacing:-.04em;font-weight:500}
 .orbit .ctr em{font-style:normal;font-size:22px;margin-top:10px}
@@ -260,25 +275,20 @@ h1,h2,h3,p{margin:0}
   <div class="navbar">
     <div class="brand"><img src="assets/icons/logo.svg" alt="">Denodo</div>
     <nav class="links"><a href="#">Platform</a><a href="#">Solutions</a><a href="#">Customers</a><a href="#">Resources</a><a href="#">Partners</a><a href="#">Company</a></nav>
-    <div class="actions"><a href="#">Sign in</a><a class="pill red" href="#">Try the Denodo Platform</a></div>
+    <div class="actions"><a href="#">Sign in</a><a class="pill white" href="#">Try the Denodo Platform</a></div>
   </div>
 </header>
 <div class="announce section"><b>New</b> 2026 Gartner® Hype Cycle™ for Data Management — read the report →</div>
 
 <!-- HERO -->
-<section class="hero section">
-  <div class="light">
-    <div class="blob" style="left:-120px;top:420px;width:700px;height:380px;background:var(--sky);opacity:.55"></div>
-    <div class="blob" style="left:180px;top:480px;width:620px;height:360px;background:var(--berry);opacity:.9;animation-delay:-4s"></div>
-    <div class="blob" style="left:520px;top:520px;width:760px;height:380px;background:var(--red);opacity:.95;animation-delay:-8s"></div>
-    <div class="blob" style="left:900px;top:220px;width:520px;height:420px;background:var(--orchid);opacity:.8;animation-delay:-2s"></div>
-    <div class="blob" style="left:1050px;top:40px;width:420px;height:420px;background:var(--saffron);opacity:.7;animation-delay:-6s"></div>
-    <div class="blob" style="left:380px;top:120px;width:700px;height:360px;background:var(--grey);opacity:1;filter:blur(90px)"></div>
-  </div>
+<div class="hpin section">
+<section class="hero">
+  <img class="swoosh" src="assets/img/hero-swoosh.png" alt="">
   <div class="copy">
-    <h1 data-reveal>The AI Data Layer</h1>
-    <p class="lead" data-reveal data-delay="1">Denodo connects, governs and unifies your data in real time. One layer for AI systems and the people who run the business. Zero copy. Full governance.</p>
-    <div class="ctas" data-reveal data-delay="2"><a class="pill black" href="#">Try the Denodo Platform <span class="arr">→</span></a><a class="pill outline" href="#how">See how it works</a></div>
+    <div class="kicker" data-reveal>The AI Data Layer</div>
+    <h1 data-reveal data-delay="1">Unlock the Potential of<br>Enterprise Data</h1>
+    <p class="lead" data-reveal data-delay="2">Denodo connects, governs and unifies your data in real time. One layer for AI systems and the people who run the business. Zero copy. Full governance.</p>
+    <div class="ctas" data-reveal data-delay="3"><a class="pill black" href="#">Try the Denodo Platform <span class="arr">→</span></a><a class="pill outline" href="#how">See how it works</a></div>
   </div>
   <div class="stats">
     <div class="stat" data-reveal data-delay="2"><b>200+</b><span>data adaptors, one access point</span></div>
@@ -287,6 +297,7 @@ h1,h2,h3,p{margin:0}
     <div class="stat" data-reveal data-delay="5"><b>One</b><span>semantic layer for people, AI and APIs</span></div>
   </div>
 </section>
+</div>
 
 <!-- HOW IT WORKS -->
 <section class="how section" id="how">
@@ -340,11 +351,11 @@ h1,h2,h3,p{margin:0}
       <div class="bg"></div>
       <div class="thread" id="thread"></div>
       <div class="pulse" id="pulse"></div>
+      <div class="copy">
+        <h2 class="title">Because you want to transform<br>to an agentic enterprise.</h2>
+        <p class="lead">The bottleneck is not AI capability, it is data. Data from hundreds of sources, locked in silos, inconsistently governed, and semantically fragmented.</p>
+      </div>
     </div>
-  </div>
-  <div class="wcopy">
-    <h2 class="title" data-reveal>Because you want to transform<br>to an agentic enterprise.</h2>
-    <p class="lead" data-reveal data-delay="1">The bottleneck is not AI capability, it is data. Data from hundreds of sources, locked in silos, inconsistently governed, and semantically fragmented.</p>
   </div>
 </section>
 
@@ -363,17 +374,12 @@ h1,h2,h3,p{margin:0}
 <section class="trusted section">
   <h3 data-reveal>Trusted by leading data and AI teams</h3>
   <div class="logos" data-reveal data-delay="1">
-    <img src="assets/logos/customer_bnp_paribas_2x.png" alt="BNP Paribas">
-    <img src="assets/logos/customer_cigna_healthcare_2x.png" alt="Cigna Healthcare">
-    <img src="assets/logos/customer_credit_agricole_2x.png" alt="Crédit Agricole">
-    <img src="assets/logos/customer_engie_2x.png" alt="Engie">
-    <img src="assets/logos/customer_estes_2x.png" alt="Estes">
-    <img src="assets/logos/customer_european_commission_2x.png" alt="European Commission">
+    <div class="track"><img src="assets/logos/customer_bnp_paribas_2x.png" alt="BNP Paribas"><img src="assets/logos/customer_cigna_healthcare_2x.png" alt="Cigna Healthcare"><img src="assets/logos/customer_credit_agricole_2x.png" alt="Crédit Agricole"><img src="assets/logos/customer_engie_2x.png" alt="Engie"><img src="assets/logos/customer_estes_2x.png" alt="Estes"><img src="assets/logos/customer_european_commission_2x.png" alt="European Commission"><img src="assets/logos/customer_volvo_2x.png" alt="Volvo"><img src="assets/logos/customer_perkins_cole_2x.png" alt="Perkins Coie"><img src="assets/logos/customer_abn_amro_2x.png" alt="ABN AMRO"><img src="assets/logos/customer_flex_2x.png" alt="Flex"><img src="assets/logos/customer_hastings_deering_2x.png" alt="Hastings Deering"><img src="assets/logos/customer_bayer_2x.png" alt="Bayer Crop Science LATAM"><img src="assets/logos/customer_johnson_2x.png" alt="Johnson & Johnson"><img src="assets/logos/customer_sanofi_2x.png" alt="Sanofi"><img src="assets/logos/customer_ing_2x.png" alt="ING-DiBa AG"><img src="assets/logos/customer_abbvie__2x.png" alt="AbbVie"><img src="assets/logos/customer_bnp_paribas_2x.png" aria-hidden="true" alt="BNP Paribas"><img src="assets/logos/customer_cigna_healthcare_2x.png" aria-hidden="true" alt="Cigna Healthcare"><img src="assets/logos/customer_credit_agricole_2x.png" aria-hidden="true" alt="Crédit Agricole"><img src="assets/logos/customer_engie_2x.png" aria-hidden="true" alt="Engie"><img src="assets/logos/customer_estes_2x.png" aria-hidden="true" alt="Estes"><img src="assets/logos/customer_european_commission_2x.png" aria-hidden="true" alt="European Commission"><img src="assets/logos/customer_volvo_2x.png" aria-hidden="true" alt="Volvo"><img src="assets/logos/customer_perkins_cole_2x.png" aria-hidden="true" alt="Perkins Coie"><img src="assets/logos/customer_abn_amro_2x.png" aria-hidden="true" alt="ABN AMRO"><img src="assets/logos/customer_flex_2x.png" aria-hidden="true" alt="Flex"><img src="assets/logos/customer_hastings_deering_2x.png" aria-hidden="true" alt="Hastings Deering"><img src="assets/logos/customer_bayer_2x.png" aria-hidden="true" alt="Bayer Crop Science LATAM"><img src="assets/logos/customer_johnson_2x.png" aria-hidden="true" alt="Johnson & Johnson"><img src="assets/logos/customer_sanofi_2x.png" aria-hidden="true" alt="Sanofi"><img src="assets/logos/customer_ing_2x.png" aria-hidden="true" alt="ING-DiBa AG"><img src="assets/logos/customer_abbvie__2x.png" aria-hidden="true" alt="AbbVie"></div>
   </div>
 </section>
 
 <!-- USE CASES -->
-<section class="uses section">
+<section class="uses section" id="uses">
   <h2 class="title center" data-reveal>Unify all your data,<br>from the data lakehouse and beyond.</h2>
   <div class="rail" data-reveal data-delay="1"><div class="on">AI agents and apps <i class="datum"></i></div><div>Lakehouse optimization</div><div>Data sharing</div></div>
   <div class="panel" data-reveal data-delay="2">
@@ -406,7 +412,7 @@ h1,h2,h3,p{margin:0}
     <div class="cust">Delivered FestoGPT, natural-language query for all employees<div class="wm">FESTO<span style="font-weight:400;letter-spacing:0">→</span></div></div>
     <div class="cust">Personalized wealth-management customer engagement through AI<div class="wm lower">:alexforbes</div></div>
   </div>
-  <div class="cta" data-reveal data-delay="4">Learn more about Denodo’s customers<a class="pill white" href="#">Customer successes <span class="arr">→</span></a></div>
+  <div class="more" data-reveal data-delay="4">Learn more about Denodo’s customers<a class="pill white" href="#">Customer successes <span class="arr">→</span></a></div>
 </section>
 
 <!-- RESOURCES -->
@@ -446,13 +452,15 @@ h1,h2,h3,p{margin:0}
 </section>
 
 <!-- PARTNERS -->
-<section class="partners section">
-  <h2 class="title center" data-reveal>Denodo partners</h2>
-  <div class="ecard" data-reveal data-delay="1">
+<section class="partners section" id="partners">
+  <div class="ecard" data-reveal>
+    <h2 class="title center">Denodo partners</h2>
+    <div class="fit" id="fit">
     <div class="orbit" id="orbit">
       <div class="ring a" id="ringA"></div>
       <div class="ring b" id="ringB"></div>
       <div class="ctr"><b>300+</b><em>active partnerships</em><p>Denodo is proud to count more than 300 active partnerships. These partnerships vary from technology alliance partners, solution consultancy and regional sales, to marketing and delivery partners.</p><a class="pill black" href="#">Find a partner <span class="arr">→</span></a></div>
+    </div>
     </div>
   </div>
 </section>
@@ -515,7 +523,12 @@ h1,h2,h3,p{margin:0}
   const buildFlows = () => { flowDots.length = 0; buildFlow(flowUp); buildFlow(flowDown); };
 
   /* ---------- Why: pulse + thread ---------- */
-  const pulse = qs('#pulse'), thread = qs('#thread'), why = qs('#why'), wpin = why.querySelector('.wpin'), srcLabel = qs('#srcLabel');
+  const pulse = qs('#pulse'), thread = qs('#thread'), why = qs('#why'), wpin = why.querySelector('.wpin'), wstick = why.querySelector('.wstick'), whyBg = why.querySelector('.bg'), whyCopy = why.querySelector('.copy'), srcLabel = qs('#srcLabel');
+  const RADIUS = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--r'));
+  // the star has two placements: under the Sources label while the band is white, and above the copy once it is dark
+  const geo = { top: 0, k: 1, topD: 0, kD: 1 }; let geoDark = null;
+  function placeStar(dark) { if (geoDark === dark) return; geoDark = dark; const top = dark ? geo.topD : geo.top, k = dark ? geo.kD : geo.k;
+    pulse.style.top = top + 'px'; pulse.style.transform = `translateX(-50%) scale(${k.toFixed(3)})`; }
   const pulseDots = [], threadDots = [];
   const whyUp = () => parseFloat(getComputedStyle(why).getPropertyValue('--up'));   // how far the Why block overlaps the pinned How block
   // the star: built on white, kept while the background switches to black.
@@ -524,8 +537,8 @@ h1,h2,h3,p{margin:0}
   function buildPulse(zone, list) {
     list.length = 0; zone.innerHTML = '';
     const dot = (x, y, r) => { const t = r / PR, size = Math.round(18 - 6 * t); const d = el('i', 'd', zone);
-      d.style.cssText = `left:${PC + x - size / 2}px;top:${PC + y - size / 2}px;width:${size}px;height:${size}px;--o:${Math.max(0.06, 1 - t * 0.96).toFixed(2)}`;
-      list.push({ n: d, t }); };
+      d.style.cssText = `left:${PC + x - size / 2}px;top:${PC + y - size / 2}px;width:${size}px;height:${size}px;--o:${Math.max(0.06, 1 - t * 0.96).toFixed(2)};--t:${t.toFixed(3)}`;
+      list.push({ n: d, t, x, y, w: 1 }); };   // w: when the wave from Sources reaches this dot (0..1), set by buildThread
     dot(0, 0, 0);
     const ring = (spokes, off, r0) => { for (let s = 0; s < spokes; s++) { const a = (s + off) * Math.PI * 2 / spokes;
       for (let r = r0; r <= PR; r += PSTEP) dot(Math.cos(a) * r, Math.sin(a) * r, r); } };
@@ -542,12 +555,40 @@ h1,h2,h3,p{margin:0}
     onScroll();                                   // put the accordion back as it should be at this scroll position, still without transitions
     how.classList.remove('measure');
     const startY = (lr.bottom - st.bottom) + whyUp() + 40;   // just under the Sources label, relative to the Why block's top
-    const cy = pulse.offsetTop + PC;               // star centre, relative to the Why block's top
-    const ys = []; for (let y = cy - PR - PSTEP; y >= startY; y -= PSTEP) ys.unshift(y);   // continue the burst's top spoke upward on the same grid
-    ys.forEach((y, i) => { const t = ys.length > 1 ? i / (ys.length - 1) : 1; const s = Math.round(6 + 6 * t);
-      const d = el('i', 'd', thread); d.style.cssText = `top:${y - s / 2}px;width:${s}px;height:${s}px;--o:${(0.15 + 0.45 * t).toFixed(2)}`; threadDots.push({ n: d, t }); });
+    // the star never touches the label: at least three thread pixels sit between them, and on short viewports
+    // the star scales down so that label, thread and star all fit above the bottom edge
+    const vh = wstick.clientHeight, GAP = 3 * PSTEP, k = clamp((vh - startY - 40) / (GAP + 2 * PR), 0.6, 1);   // never below 60%: on absurdly short viewports the star overflows rather than shrinks away
+    const cy = Math.min(Math.max(vh / 2, startY + (GAP + PR) * k), vh - 40 - PR * k);   // star centre, relative to the Why block's top: screen-centred when there is room
+    geo.top = cy - PC; geo.k = k;
+    // dark placement: the star sits between the nav and the copy, scaled to fit that room
+    const NAV = 120, copyH = whyCopy.offsetHeight + 64 + 32, availD = vh - NAV - copyH;
+    geo.kD = clamp(availD / (2 * PR), 0.5, 1); geo.topD = NAV + availD / 2 - PC;
+    geoDark = null; placeStar(why.classList.contains('dark'));
+    const step = PSTEP * k, ys = []; for (let y = cy - (PR + PSTEP) * k; y >= startY; y -= step) ys.unshift(y);   // continue the burst's top spoke upward on the same grid
+    ys.forEach((y, i) => { const t = ys.length > 1 ? i / (ys.length - 1) : 1; const s = Math.round((6 + 6 * t) * k);
+      const d = el('i', 'd', thread); d.style.cssText = `top:${y - s / 2}px;width:${s}px;height:${s}px;--o:${(0.15 + 0.45 * t).toFixed(2)}`; threadDots.push({ n: d, t, w: 1, y }); });
+    // the star grows out of Sources: one wave front leaves the label, runs down the thread and washes through the star,
+    // so every dot lights by its distance from the label rather than from the star's centre
+    const maxD = cy + PR * k - startY;             // the bottom of the star is the last point the wave reaches
+    threadDots.forEach(d => d.w = (d.y - startY) / maxD);
+    pulseDots.forEach(d => d.w = Math.hypot(d.x * k, cy + d.y * k - startY) / maxD);
   }
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+
+  /* ---------- full-bleed blocks: Use cases and the partners card ---------- */
+  const page = qs('.page'), PAGE_PAD = parseFloat(getComputedStyle(page).paddingLeft);
+  const bleeds = ['.hero', '#uses', '.partners .ecard'].map(sel => { const n = qs(sel); return { n, pad: parseFloat(getComputedStyle(n).paddingLeft), top0: 0 }; });
+  const measureBleeds = () => bleeds.forEach(b => b.top0 = b.n.getBoundingClientRect().top + scrollY);   // where each block sits with the page unscrolled
+  function bleedBlocks(vh) {
+    // a block widens to the viewport edges as its top comes up the screen (from the first scroll if it is already on screen at load),
+    // and narrows back as its bottom leaves; margins and padding move together so the content inside stays exactly where it was
+    const pr = page.getBoundingClientRect();
+    bleeds.forEach(({ n, pad, top0 }) => { const r = n.getBoundingClientRect(), enter = Math.min(vh * 0.75, top0), range = Math.min(vh * 0.35, top0);   // a block on screen at load is fully wide the moment its top reaches the viewport top
+      const bIn = clamp((enter - r.top) / range, 0, 1), bOut = clamp((vh * 0.6 - r.bottom) / (vh * 0.35), 0, 1), b = Math.min(bIn, 1 - bOut);
+      const g = (pr.left + PAGE_PAD) * b;
+      n.style.marginLeft = n.style.marginRight = -g + 'px'; n.style.width = `calc(100% + ${2 * g}px)`; n.style.setProperty('--bleed', g + 'px'); n.style.setProperty('--b', b.toFixed(3));
+      n.style.paddingLeft = n.style.paddingRight = (pad + g) + 'px'; n.style.borderRadius = RADIUS * (1 - b) + 'px'; });
+  }
 
   /* ---------- How it works: pinned layer reveal ---------- */
   const how = qs('#how'), pin = how.querySelector('.pin'), stick = how.querySelector('.stick');
@@ -564,29 +605,54 @@ h1,h2,h3,p{margin:0}
     flowDots.forEach(({ n, at }) => n.classList.toggle('lit', p0 >= at));
     xs.forEach(({ n, from, to }) => n.classList.toggle('c', !(p0 >= from && p0 < to)));
     shorts.forEach(({ n, at }) => n.classList.toggle('short', p0 >= at));
-    // Why, phase 1 (still white): once How unpins, the thread lights top-down out of Sources, then the star radiates from its centre,
+    // Why, phase 1 (still white): once How unpins, one wave leaves Sources, lights the thread top-down and grows the star out of it,
     // as the block's top travels from where the How pin ends (--up above the viewport bottom) to 10% of the viewport
     const wr = wpin.getBoundingClientRect(), up = whyUp();
     const p1 = clamp((vh - up - wr.top) / (vh * 0.9 - up), 0, 1);
-    threadDots.forEach(({ n, t }) => n.classList.toggle('lit', t <= p1 / 0.45));
-    pulseDots.forEach(({ n, t }) => n.classList.toggle('lit', t <= (p1 - 0.35) / 0.65 * 1.1));
+    const front = p1 / 0.95;                      // the wave front, 0 at the Sources label, 1 at the bottom of the star
+    threadDots.forEach(({ n, w }) => n.classList.toggle('lit', w <= front));
+    pulseDots.forEach(({ n, w }) => n.classList.toggle('lit', w <= front));
     // phase 2 (pinned): the black band fades in behind the finished star, then the copy scrolls up in it
     const p2 = clamp(-wr.top / (wr.height - vh), 0, 1);
-    why.classList.toggle('dark', p2 > 0.2);
+    const dark = p2 > 0.2; why.classList.toggle('dark', dark); placeStar(dark);
+    // phase 3 (unpinned): as the band scrolls away it narrows back to the page width and rounds its corners, following the scroll
+    const e = clamp((-wr.top - (wr.height - vh)) / 360, 0, 1);
+    why.classList.toggle('leaving', e > 0);
+    if (e > 0) { const g = (document.documentElement.clientWidth - wstick.clientWidth) / 2 * (1 - e);
+      whyBg.style.left = whyBg.style.right = -g + 'px'; whyBg.style.borderRadius = (RADIUS * e) + 'px'; }
+    else whyBg.style.left = whyBg.style.right = whyBg.style.borderRadius = '';
+    bleedBlocks(vh);
   }
 
   /* ---------- Partners orbit ---------- */
+  // two dotted ellipses and a ring of chips, sized as in the design (orbit 1180x700, centre 590,350).
+  // The dots drift slowly along their own ellipse, one way on the inner ring and the other on the outer, so the shape never changes.
+  const orbit = qs('#orbit'), fit = qs('#fit'), ecard = qs('.ecard'), ORBIT_W = 1180, ORBIT_H = 700;
+  const rings = [{ el: qs('#ringA'), n: 44, rx: 321, ry: 204, s: 8, base: 0.3, amp: 0.7, ph: 2, w: Math.PI * 2 / 300, phi: 0, dots: [] },
+                 { el: qs('#ringB'), n: 64, rx: 410, ry: 267, s: 6, base: 0.12, amp: 0.3, ph: 3, w: -Math.PI * 2 / 420, phi: 0, dots: [] }];   // w: radians per second, a lap in 5 and 7 minutes
+  function placeRing(r) { r.dots.forEach(d => { const a = d.a + r.phi; d.n.style.transform = `translate(${(r.rx + Math.cos(a) * r.rx - r.s / 2).toFixed(1)}px,${(r.ry + Math.sin(a) * r.ry - r.s / 2).toFixed(1)}px)`; }); }
   function buildOrbit() {
-    const ringA = qs('#ringA'), ringB = qs('#ringB'), orbit = qs('#orbit');
-    const mk = (ring, n, rx, ry, size, base, amp, ph) => { ring.style.width = rx * 2 + 'px'; ring.style.height = ry * 2 + 'px'; ring.innerHTML = '';
-      for (let i = 0; i < n; i++) { const a = i * Math.PI * 2 / n; const d = el('i', 'd', ring);
-        d.style.cssText = `left:${rx + Math.cos(a) * rx - size / 2}px;top:${ry + Math.sin(a) * ry - size / 2}px;width:${size}px;height:${size}px;opacity:${(base + amp * Math.abs(Math.sin(a * ph))).toFixed(2)}`; } };
-    mk(ringA, 44, 330, 218, 8, 0.3, 0.7, 2); mk(ringB, 64, 430, 282, 6, 0.12, 0.3, 3);
+    rings.forEach(r => { r.el.style.width = r.rx * 2 + 'px'; r.el.style.height = r.ry * 2 + 'px'; r.el.innerHTML = ''; r.dots = [];
+      for (let i = 0; i < r.n; i++) { const a = i * Math.PI * 2 / r.n; const d = el('i', 'd', r.el);
+        d.style.cssText = `width:${r.s}px;height:${r.s}px;opacity:${(r.base + r.amp * Math.abs(Math.sin(a * r.ph))).toFixed(2)}`; r.dots.push({ n: d, a }); }
+      placeRing(r); });
     orbit.querySelectorAll('.chip').forEach(c => c.remove());
     const partners = ['Google Cloud', 'AWS', 'Microsoft Azure', 'Snowflake', 'Databricks', 'Alibaba Cloud', 'Collibra', 'Deloitte', 'Accenture', 'KPMG', 'Infosys', 'Wipro', 'Atos'];
     partners.forEach((p, i) => { const a = -Math.PI / 2 + i * Math.PI * 2 / partners.length; const c = el('span', 'chip', orbit);
-      c.innerHTML = `<i class="datum"></i>${p}`; c.style.left = (632 + Math.cos(a) * 552) + 'px'; c.style.top = (380 + Math.sin(a) * 336) + 'px'; });
+      c.innerHTML = `<i class="datum"></i>${p}`; c.style.left = (ORBIT_W / 2 + Math.cos(a) * 518) + 'px'; c.style.top = (ORBIT_H / 2 + Math.sin(a) * 317) + 'px'; });
+    fitOrbit();
   }
+  // the card fits under the nav in one viewport: scale the orbit down when the viewport is short (its layout height shrinks with it)
+  function fitOrbit() {
+    const NAV = 108, titleH = ecard.querySelector('.title').offsetHeight, pad = parseFloat(getComputedStyle(ecard).paddingTop) * 2, gap = parseFloat(getComputedStyle(ecard).gap);
+    const k = clamp((window.innerHeight - NAV - pad - titleH - gap) / ORBIT_H, 0.55, 1);   // the card runs from just under the nav to the bottom edge
+    orbit.style.transform = `scale(${k.toFixed(3)})`; fit.style.height = (ORBIT_H * k) + 'px';
+  }
+  // drift only while the section is on screen
+  let orbitOn = false, orbitLast = 0;
+  function orbitTick(t) { if (!orbitOn) return; const dt = Math.min(0.1, (t - orbitLast) / 1000); orbitLast = t;
+    rings.forEach(r => { r.phi += r.w * dt; placeRing(r); }); requestAnimationFrame(orbitTick); }
+  new IntersectionObserver(es => es.forEach(e => { const on = e.isIntersecting; if (on && !orbitOn) { orbitOn = true; orbitLast = performance.now(); requestAnimationFrame(orbitTick); } if (!on) orbitOn = false; })).observe(qs('#partners'));
 
   /* ---------- CTA fan ---------- */
   function buildFan() {
@@ -604,7 +670,7 @@ h1,h2,h3,p{margin:0}
 
   document.querySelectorAll('a[href^="#"]').forEach(a => a.addEventListener('click', e => { const t = document.querySelector(a.getAttribute('href')); if (!t) return; e.preventDefault(); t.scrollIntoView({ behavior: 'smooth', block: 'start' }); }));
 
-  function buildAll() { buildFlows(); buildPulse(pulse, pulseDots); buildThread(); buildOrbit(); buildFan(); onScroll(); }
+  function buildAll() { measureBleeds(); buildFlows(); buildPulse(pulse, pulseDots); buildThread(); buildOrbit(); buildFan(); onScroll(); }
   window.addEventListener('scroll', onScroll, { passive: true });   // scroll events already arrive once per frame; rAF would stall in a hidden tab
   window.addEventListener('resize', () => requestAnimationFrame(buildAll));
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(buildAll); else buildAll();
